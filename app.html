@@ -37,13 +37,26 @@
     </div>
   </main>
   <script>
-    document.getElementById('sendBtn').addEventListener('click', ()=>{
+    // Backend configuration: supply ?backend=https://your-backend.example (or replace default)
+    const BACKEND = (new URLSearchParams(window.location.search).get('backend')) || 'https://YOUR_BACKEND_URL';
+    const apiBase = BACKEND.replace(/\/$/, '');
+
+    document.getElementById('sendBtn').addEventListener('click', async ()=>{
       const cat = document.getElementById('category').value;
       const msg = document.getElementById('message').value.trim();
       if(!msg){ document.getElementById('result').innerText='Please enter a message.'; return }
-      // Demo behavior: show success and explain how to connect to backend
-      document.getElementById('result').innerText = 'Demo sent. To enable real tickets, point this page to your backend /api/message endpoint.'
+
+      // Post to live backend if configured
+      try {
+        const body = { user_id: 0, username: 'web', full_name: 'Web User', category: cat, message: msg };
+        const res = await fetch(`${apiBase}/api/message`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        const data = await res.json();
+        document.getElementById('result').innerText = data.message || 'Sent';
+      } catch (err) {
+        document.getElementById('result').innerText = 'Failed to send — check backend URL and CORS. ' + err;
+      }
     })
+
     document.getElementById('copyRef').addEventListener('click', async ()=>{
       const v = document.getElementById('refLink').value;
       await navigator.clipboard.writeText(v);

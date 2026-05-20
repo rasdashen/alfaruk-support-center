@@ -31,21 +31,51 @@
     </div>
   </main>
   <script>
-    document.getElementById('load').addEventListener('click', ()=>{
-      const out = document.getElementById('tickets'); out.innerHTML='';
-      // Demo tickets
-      const demo = [{id:1,category:'technical',message:'App not working',status:'open',created_at:'2026-05-20'}];
-      demo.forEach(t => {
-        const d = document.createElement('div'); d.className='item'; d.innerHTML=`<b>#${t.id}</b> • ${t.category} • ${t.status}<div class='soft'>${t.created_at}</div><div style='margin-top:6px'>${t.message}</div>`;
-        d.onclick = ()=> document.getElementById('ticketId').value = t.id;
-        out.appendChild(d);
-      })
-    })
-    document.getElementById('replyBtn').addEventListener('click', ()=>{
-      const id = document.getElementById('ticketId').value; const text = document.getElementById('replyText').value.trim();
+    // Backend configuration: supply ?backend=https://your-backend.example (or replace default)
+    const BACKEND = (new URLSearchParams(window.location.search).get('backend')) || 'https://YOUR_BACKEND_URL';
+    const apiBase = BACKEND.replace(/\/$/, '');
+
+    async function loadTickets() {
+      const out = document.getElementById('tickets'); out.innerHTML='Loading...';
+      const cat = document.getElementById('filter').value;
+      const token = document.getElementById('token').value;
+      try {
+        const res = await fetch(`${apiBase}/api/admin/tickets?token=${encodeURIComponent(token)}&category=${encodeURIComponent(cat)}`);
+        const data = await res.json();
+        out.innerHTML = '';
+        (data.tickets || []).forEach(t => {
+          const d = document.createElement('div'); d.className='item'; d.innerHTML=`<b>#${t.id}</b> • ${t.category} • ${t.status}<div class='soft'>${t.created_at}</div><div style='margin-top:6px'>${t.message}</div>`;
+          d.onclick = ()=> document.getElementById('ticketId').value = t.id;
+          out.appendChild(d);
+        });
+      } catch (err) {
+        out.innerHTML = 'Failed to load tickets — check backend URL and token. ' + err;
+      }
+    }
+
+    document.getElementById('load').addEventListener('click', loadTickets);
+
+    document.getElementById('replyBtn').addEventListener('click', async ()=>{
+      const id = parseInt(document.getElementById('ticketId').value, 10); const text = document.getElementById('replyText').value.trim();
+      const token = document.getElementById('token').value;
       if(!id||!text){ document.getElementById('result').innerText='Provide ticket id and reply text'; return }
-      document.getElementById('result').innerText='Demo reply sent. Configure /api/admin/reply to send actual DM.'
+      try {
+        const res = await fetch(`${apiBase}/api/admin/reply`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ token, ticket_id: id, text }) });
+        const data = await res.json();
+        document.getElementById('result').innerText = data.message || data.detail || 'Done';
+        loadTickets();
+      } catch (err) {
+        document.getElementById('result').innerText = 'Failed to send reply — check backend URL and CORS. ' + err;
+      }
     })
+
+    // initial load
+    document.addEventListener('DOMContentLoaded', ()=>{
+      // if token is provided in query param, prefill it
+      const qToken = new URLSearchParams(window.location.search).get('token');
+      if(qToken) document.getElementById('token').value = qToken;
+      loadTickets();
+    });
   </script>
 </body>
 </html>

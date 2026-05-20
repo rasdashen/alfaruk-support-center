@@ -37,6 +37,28 @@ Notes:
 - These pages are static demos. To connect to your running backend (the FastAPI app), update the JS fetch calls to point to your backend HTTPS endpoint (publicly reachable), and handle CORS if necessary.
 - If you prefer automatic deployment, add a GitHub Action to push to `gh-pages` branch or use a build pipeline.
 
+Backend configuration and CORS
+--------------------------------
+- The static pages support a `backend` query parameter so you can publish the pages on GitHub Pages and still call your live backend. Example:
+
+   `https://<your-username>.github.io/ALFARUK-Support-Center/app.html?backend=https://my-backend.example.com`
+
+- `app.html` will POST to `<backend>/api/message` and call `<backend>/api/user/<id>` when needed.
+- `staff.html` will call `<backend>/api/admin/tickets` and POST to `<backend>/api/admin/reply`.
+
+- Make sure your FastAPI server allows CORS from the published site. A simple example using `fastapi.middleware.cors`:
+
+   ```py
+   from fastapi.middleware.cors import CORSMiddleware
+   app.add_middleware(
+         CORSMiddleware,
+         allow_origins=["https://<your-username>.github.io"],
+         allow_credentials=True,
+         allow_methods=["*"],
+         allow_headers=["*"],
+   )
+   ```
+
 If you want, I can:
 - Create a `gh-pages` GitHub Action to deploy automatically.
 - Update the pages to call your deployed API endpoints (provide a public URL or set environment variables).
