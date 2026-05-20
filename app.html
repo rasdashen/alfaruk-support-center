@@ -8,60 +8,117 @@
 </head>
 <body>
   <main class="wrap">
-    <div class="panel">
-      <div class="soft">Customer Mini App (static demo)</div>
-      <h1>Support Center — Demo</h1>
-      <p class="soft">This static page is intended to be used as the Telegram Mini App entry. It can be connected to your backend endpoints after publishing.</p>
-      <div style="height:12px"></div>
-      <label>Category</label>
-      <div style="height:8px"></div>
-      <select id="category" class="input">
-        <option value="technical">Technical issue</option>
-        <option value="general">General inquiry</option>
-        <option value="feedback">Feedback</option>
-      </select>
-      <div style="height:8px"></div>
-      <textarea id="message" placeholder="Write your message" rows="6"></textarea>
-      <div style="height:8px"></div>
-      <button class="btn" id="sendBtn">Send (demo)</button>
-      <div id="result" class="soft" style="margin-top:12px"></div>
-      <hr />
-      <h3>Referral</h3>
-      <div class="item">
-        <div id="refText">Share this static demo link with friends.</div>
-        <div style="height:8px"></div>
-        <input id="refLink" class="input" value="https://github.io/ALFARUK-Support-Center/app.html" readonly />
-        <div style="height:8px"></div>
-        <button class="btn" id="copyRef">Copy referral link</button>
+    <div class="panel hero-panel">
+      <span class="tag">Telegram Mini App</span>
+      <h1>Alfaruk Support Center</h1>
+      <p class="soft">Send a support request from a static web page into your Telegram support group. Use the backend URL below to connect this demo to your live relay service.</p>
+      <div class="info-grid">
+        <div>
+          <strong>Fast setup</strong>
+          <p class="soft">Paste a backend URL and start sending messages in seconds.</p>
+        </div>
+        <div>
+          <strong>Telegram-ready</strong>
+          <p class="soft">Designed for Telegram Mini App integration with a simple API.</p>
+        </div>
       </div>
+    </div>
+
+    <div class="panel form-panel">
+      <div class="section-header">
+        <h2>Support Request</h2>
+        <span class="badge">Live demo</span>
+      </div>
+
+      <label for="backendInput">Backend URL</label>
+      <input id="backendInput" class="input" placeholder="https://your-backend.example" />
+      <p class="soft field-note">Optionally set a public backend URL or use the default local address for testing.</p>
+
+      <label for="category">Category</label>
+      <select id="category" class="input">
+        <option value="Technical Issue">Technical issue</option>
+        <option value="General Inquiry">General inquiry</option>
+        <option value="Feedback">Feedback</option>
+      </select>
+
+      <label for="message">Message</label>
+      <textarea id="message" placeholder="Describe your issue or question here" rows="6"></textarea>
+
+      <button class="btn action-btn" id="sendBtn">Send support request</button>
+      <div id="statusBox" class="status-box soft">Enter your message and press send.</div>
+    </div>
+
+    <div class="panel referral-panel">
+      <div class="section-header">
+        <h2>Share this page</h2>
+      </div>
+      <p class="soft">Send this demo link to teammates or use it as your support landing page.</p>
+      <input id="refLink" class="input" readonly />
+      <button class="btn" id="copyRef">Copy link</button>
+      <div id="copyStatus" class="soft" style="margin-top:10px"></div>
     </div>
   </main>
   <script>
-    // Backend configuration: supply ?backend=https://your-backend.example (or replace default)
-    const BACKEND = (new URLSearchParams(window.location.search).get('backend')) || 'https://YOUR_BACKEND_URL';
-    const apiBase = BACKEND.replace(/\/$/, '');
+    const defaultBackend = (new URLSearchParams(window.location.search).get('backend')) || 'http://localhost:8080';
+    const backendInput = document.getElementById('backendInput');
+    const statusBox = document.getElementById('statusBox');
+    const copyStatus = document.getElementById('copyStatus');
+    const refLink = document.getElementById('refLink');
 
-    document.getElementById('sendBtn').addEventListener('click', async ()=>{
+    backendInput.value = defaultBackend;
+    refLink.value = window.location.href;
+
+    function getApiBase() {
+      const value = backendInput.value.trim();
+      return value ? value.replace(/\/$/, '') : defaultBackend;
+    }
+
+    function showStatus(message, isError = false) {
+      statusBox.textContent = message;
+      statusBox.classList.toggle('status-error', isError);
+    }
+
+    document.getElementById('sendBtn').addEventListener('click', async () => {
       const cat = document.getElementById('category').value;
       const msg = document.getElementById('message').value.trim();
-      if(!msg){ document.getElementById('result').innerText='Please enter a message.'; return }
+      if (!msg) {
+        showStatus('Please enter a message before sending.', true);
+        return;
+      }
 
-      // Post to live backend if configured
+      showStatus('Sending your support request...', false);
+      const apiBase = getApiBase();
+
       try {
         const body = { user_id: 0, username: 'web', full_name: 'Web User', category: cat, message: msg };
-        const res = await fetch(`${apiBase}/api/message`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        const res = await fetch(`${apiBase}/api/ticket/submit`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
         const data = await res.json();
-        document.getElementById('result').innerText = data.message || 'Sent';
-      } catch (err) {
-        document.getElementById('result').innerText = 'Failed to send — check backend URL and CORS. ' + err;
-      }
-    })
 
-    document.getElementById('copyRef').addEventListener('click', async ()=>{
-      const v = document.getElementById('refLink').value;
-      await navigator.clipboard.writeText(v);
-      alert('Referral link copied');
-    })
+        if (!res.ok || data.status !== 'success') {
+          showStatus(data.error || 'Unable to send request. Check the backend URL and CORS.', true);
+          return;
+        }
+
+        showStatus('Message sent successfully. Check your Telegram support group for the reply.');
+        document.getElementById('message').value = '';
+      } catch (err) {
+        showStatus('Failed to send — confirm backend availability and CORS settings.', true);
+        console.error(err);
+      }
+    });
+
+    document.getElementById('copyRef').addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(refLink.value);
+        copyStatus.textContent = 'Referral link copied to clipboard.';
+      } catch (err) {
+        copyStatus.textContent = 'Unable to copy automatically. Please copy manually.';
+      }
+    });
   </script>
 </body>
 </html>
