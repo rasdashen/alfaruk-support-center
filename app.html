@@ -31,12 +31,7 @@
       </div>
 
       <div class="field-note-block">
-        <p class="soft field-note">Use <code>?backend=https://your-backend.example</code> in the URL, or replace the placeholder below with your real backend URL before deploying.</p>
-      </div>
-
-      <div class="backend-info-row">
-        <strong>Backend:</strong>
-        <span id="backendInfo" class="backend-info"></span>
+        <p class="soft field-note">The backend URL is hidden for the Mini App. Local testing uses localhost automatically.</p>
       </div>
 
       <label for="category">Category</label>
@@ -64,13 +59,14 @@
     </div>
   </main>
   <script>
-    const DEFAULT_BACKEND = 'https://YOUR_BACKEND_URL';
+    const DEFAULT_BACKEND = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:8080'
+      : 'https://YOUR_PUBLIC_BACKEND_URL';
     const apiBase = (new URLSearchParams(window.location.search).get('backend') || DEFAULT_BACKEND).replace(/\/$/, '');
     const statusBox = document.getElementById('statusBox');
     const copyStatus = document.getElementById('copyStatus');
     const refLink = document.getElementById('refLink');
 
-    document.getElementById('backendInfo').textContent = apiBase;
     refLink.value = window.location.href;
 
     function showStatus(message, isError = false) {
