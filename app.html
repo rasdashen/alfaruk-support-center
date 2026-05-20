@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ALFARUK Support — Mini App</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="wrap">
+    <div class="panel">
+      <div class="soft">Customer Mini App (static demo)</div>
+      <h1>Support Center — Demo</h1>
+      <p class="soft">This static page is intended to be used as the Telegram Mini App entry. It can be connected to your backend endpoints after publishing.</p>
+      <div style="height:12px"></div>
+      <label>Category</label>
+      <div style="height:8px"></div>
+      <select id="category" class="input">
+        <option value="technical">Technical issue</option>
+        <option value="general">General inquiry</option>
+        <option value="feedback">Feedback</option>
+      </select>
+      <div style="height:8px"></div>
+      <textarea id="message" placeholder="Write your message" rows="6"></textarea>
+      <div style="height:8px"></div>
+      <button class="btn" id="sendBtn">Send (demo)</button>
+      <div id="result" class="soft" style="margin-top:12px"></div>
+      <hr />
+      <h3>Referral</h3>
+      <div class="item">
+        <div id="refText">Share this static demo link with friends.</div>
+        <div style="height:8px"></div>
+        <input id="refLink" class="input" value="https://github.io/ALFARUK-Support-Center/app.html" readonly />
+        <div style="height:8px"></div>
+        <button class="btn" id="copyRef">Copy referral link</button>
+      </div>
+    </div>
+  </main>
+  <script>
+    document.getElementById('sendBtn').addEventListener('click', ()=>{
+      const cat = document.getElementById('category').value;
+      const msg = document.getElementById('message').value.trim();
+      if(!msg){ document.getElementById('result').innerText='Please enter a message.'; return }
+      // Demo behavior: show success and explain how to connect to backend
+      document.getElementById('result').innerText = 'Demo sent. To enable real tickets, point this page to your backend /api/message endpoint.'
+    })
+    document.getElementById('copyRef').addEventListener('click', async ()=>{
+      const v = document.getElementById('refLink').value;
+      await navigator.clipboard.writeText(v);
+      alert('Referral link copied');
+    })
+  </script>
+</body>
+</html>
