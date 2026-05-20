@@ -1,25 +1,25 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>ALFARUK Support — Mini App</title>
+  <title>Alfaruk Multimedia Partner Support</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <main class="wrap">
     <div class="panel hero-panel">
-      <span class="tag">Telegram Mini App</span>
-      <h1>Alfaruk Support Center</h1>
-      <p class="soft">Send a support request from a static web page into your Telegram support group. Use the backend URL below to connect this demo to your live relay service.</p>
+      <span class="tag">Alfaruk Multimedia Partner</span>
+      <h1>Support Center</h1>
+      <p class="soft">Submit support tickets directly to Telegram from this Mini App. The backend URL is configured from the page URL or by editing the page before publishing.</p>
       <div class="info-grid">
         <div>
-          <strong>Fast setup</strong>
-          <p class="soft">Paste a backend URL and start sending messages in seconds.</p>
+          <strong>Customer-focused</strong>
+          <p class="soft">A simple support page for your customers and partners.</p>
         </div>
         <div>
           <strong>Telegram-ready</strong>
-          <p class="soft">Designed for Telegram Mini App integration with a simple API.</p>
+          <p class="soft">Built for the relay backend API and your support group.</p>
         </div>
       </div>
     </div>
@@ -27,12 +27,17 @@
     <div class="panel form-panel">
       <div class="section-header">
         <h2>Support Request</h2>
-        <span class="badge">Live demo</span>
+        <span class="badge">Alfaruk Multimedia Partner</span>
       </div>
 
-      <label for="backendInput">Backend URL</label>
-      <input id="backendInput" class="input" placeholder="https://your-backend.example" />
-      <p class="soft field-note">Optionally set a public backend URL or use the default local address for testing.</p>
+      <div class="field-note-block">
+        <p class="soft field-note">Use <code>?backend=https://your-backend.example</code> in the URL, or replace the placeholder below with your real backend URL before deploying.</p>
+      </div>
+
+      <div class="backend-info-row">
+        <strong>Backend:</strong>
+        <span id="backendInfo" class="backend-info"></span>
+      </div>
 
       <label for="category">Category</label>
       <select id="category" class="input">
@@ -52,26 +57,21 @@
       <div class="section-header">
         <h2>Share this page</h2>
       </div>
-      <p class="soft">Send this demo link to teammates or use it as your support landing page.</p>
+      <p class="soft">Share the support page URL directly with customers or open it from your Telegram Mini App.</p>
       <input id="refLink" class="input" readonly />
       <button class="btn" id="copyRef">Copy link</button>
       <div id="copyStatus" class="soft" style="margin-top:10px"></div>
     </div>
   </main>
   <script>
-    const defaultBackend = (new URLSearchParams(window.location.search).get('backend')) || 'http://localhost:8080';
-    const backendInput = document.getElementById('backendInput');
+    const DEFAULT_BACKEND = 'https://YOUR_BACKEND_URL';
+    const apiBase = (new URLSearchParams(window.location.search).get('backend') || DEFAULT_BACKEND).replace(/\/$/, '');
     const statusBox = document.getElementById('statusBox');
     const copyStatus = document.getElementById('copyStatus');
     const refLink = document.getElementById('refLink');
 
-    backendInput.value = defaultBackend;
+    document.getElementById('backendInfo').textContent = apiBase;
     refLink.value = window.location.href;
-
-    function getApiBase() {
-      const value = backendInput.value.trim();
-      return value ? value.replace(/\/$/, '') : defaultBackend;
-    }
 
     function showStatus(message, isError = false) {
       statusBox.textContent = message;
@@ -86,11 +86,21 @@
         return;
       }
 
+      if (apiBase.includes('YOUR_BACKEND_URL')) {
+        showStatus('Backend not configured. Add ?backend=https://your-backend.example or edit this page script.', true);
+        return;
+      }
+
       showStatus('Sending your support request...', false);
-      const apiBase = getApiBase();
 
       try {
-        const body = { user_id: 0, username: 'web', full_name: 'Web User', category: cat, message: msg };
+        const body = {
+          user_id: 0,
+          username: 'web',
+          full_name: 'Web User',
+          category: cat,
+          message: msg,
+        };
         const res = await fetch(`${apiBase}/api/ticket/submit`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -99,7 +109,7 @@
         const data = await res.json();
 
         if (!res.ok || data.status !== 'success') {
-          showStatus(data.error || 'Unable to send request. Check the backend URL and CORS.', true);
+          showStatus(data.error || 'Unable to send request. Check backend configuration and CORS.', true);
           return;
         }
 

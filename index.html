@@ -1,20 +1,134 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>ALFARUK Support Center</title>
+  <title>Alfaruk Multimedia Partner Support</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <main class="wrap">
-    <h1>ALFARUK Support Center</h1>
-    <p>Static hosting for the Telegram Mini App and staff portal.</p>
-    <ul>
-      <li><a href="/alfaruk-support-center/app.html">Customer Mini App (app.html)</a></li>
-      <li><a href="/alfaruk-support-center/staff.html">Staff Portal (staff.html)</a></li>
-    </ul>
-    <p>Follow the README to publish this site to GitHub Pages and copy the <strong>app.html</strong> URL into BotFather's mini app Configure Menu Button.</p>
+    <div class="panel hero-panel">
+      <span class="tag">Alfaruk Multimedia Partner</span>
+      <h1>Support Center</h1>
+      <p class="soft">Submit support tickets directly to Telegram from this Mini App. The backend URL is configured from the page URL or by editing the page before publishing.</p>
+      <div class="info-grid">
+        <div>
+          <strong>Customer-focused</strong>
+          <p class="soft">A simple support page for your customers and partners.</p>
+        </div>
+        <div>
+          <strong>Telegram-ready</strong>
+          <p class="soft">Built for the relay backend API and your support group.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel form-panel">
+      <div class="section-header">
+        <h2>Support Request</h2>
+        <span class="badge">Alfaruk Multimedia Partner</span>
+      </div>
+
+      <div class="field-note-block">
+        <p class="soft field-note">Use <code>?backend=https://your-backend.example</code> in the URL, or replace the placeholder below with your real backend URL before deploying.</p>
+      </div>
+
+      <div class="backend-info-row">
+        <strong>Backend:</strong>
+        <span id="backendInfo" class="backend-info"></span>
+      </div>
+
+      <label for="category">Category</label>
+      <select id="category" class="input">
+        <option value="Technical Issue">Technical issue</option>
+        <option value="General Inquiry">General inquiry</option>
+        <option value="Feedback">Feedback</option>
+      </select>
+
+      <label for="message">Message</label>
+      <textarea id="message" placeholder="Describe your issue or question here" rows="6"></textarea>
+
+      <button class="btn action-btn" id="sendBtn">Send support request</button>
+      <div id="statusBox" class="status-box soft">Enter your message and press send.</div>
+    </div>
+
+    <div class="panel referral-panel">
+      <div class="section-header">
+        <h2>Share this page</h2>
+      </div>
+      <p class="soft">Share the support page URL directly with customers or open it from your Telegram Mini App.</p>
+      <input id="refLink" class="input" readonly />
+      <button class="btn" id="copyRef">Copy link</button>
+      <div id="copyStatus" class="soft" style="margin-top:10px"></div>
+    </div>
   </main>
+  <script>
+    const DEFAULT_BACKEND = 'https://YOUR_BACKEND_URL';
+    const apiBase = (new URLSearchParams(window.location.search).get('backend') || DEFAULT_BACKEND).replace(/\/$/, '');
+    const statusBox = document.getElementById('statusBox');
+    const copyStatus = document.getElementById('copyStatus');
+    const refLink = document.getElementById('refLink');
+
+    document.getElementById('backendInfo').textContent = apiBase;
+    refLink.value = window.location.href;
+
+    function showStatus(message, isError = false) {
+      statusBox.textContent = message;
+      statusBox.classList.toggle('status-error', isError);
+    }
+
+    document.getElementById('sendBtn').addEventListener('click', async () => {
+      const cat = document.getElementById('category').value;
+      const msg = document.getElementById('message').value.trim();
+      if (!msg) {
+        showStatus('Please enter a message before sending.', true);
+        return;
+      }
+
+      if (apiBase.includes('YOUR_BACKEND_URL')) {
+        showStatus('Backend not configured. Add ?backend=https://your-backend.example or edit this page script.', true);
+        return;
+      }
+
+      showStatus('Sending your support request...', false);
+
+      try {
+        const body = {
+          user_id: 0,
+          username: 'web',
+          full_name: 'Web User',
+          category: cat,
+          message: msg,
+        };
+        const res = await fetch(`${apiBase}/api/ticket/submit`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json();
+
+        if (!res.ok || data.status !== 'success') {
+          showStatus(data.error || 'Unable to send request. Check backend configuration and CORS.', true);
+          return;
+        }
+
+        showStatus('Message sent successfully. Check your Telegram support group for the reply.');
+        document.getElementById('message').value = '';
+      } catch (err) {
+        showStatus('Failed to send — confirm backend availability and CORS settings.', true);
+        console.error(err);
+      }
+    });
+
+    document.getElementById('copyRef').addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(refLink.value);
+        copyStatus.textContent = 'Referral link copied to clipboard.';
+      } catch (err) {
+        copyStatus.textContent = 'Unable to copy automatically. Please copy manually.';
+      }
+    });
+  </script>
 </body>
 </html>
